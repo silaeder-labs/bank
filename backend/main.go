@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"log/slog"
+	"os"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
@@ -16,6 +17,8 @@ import (
 	echokitMw "github.com/nrf24l01/go-web-utils/echokit/middleware"
 	echokitSchemas "github.com/nrf24l01/go-web-utils/echokit/schemas"
 	pgKit "github.com/nrf24l01/go-web-utils/pg_kit"
+
+	gologger "github.com/nrf24l01/go-logger"
 )
 
 func main() {
@@ -23,7 +26,7 @@ func main() {
 
 	err := godotenv.Load(".env")
 	if err != nil {
-		logger.Warn("Failed to load .env file")
+		logger.Warn("Failed to load .env file: %v", slog.Any("error", err))
 	}
 
 	// Configuration initialization
@@ -49,7 +52,10 @@ func main() {
 	e.Use(echoMw.Recover())
 	e.Use(echoMw.RemoveTrailingSlash())
 	e.Use(echokitMw.TraceMiddleware())
-	e.Use(echokitMw.RequestLoggerWithTrace())
+	// create and pass colored console logger into middleware
+	// register custom LogType "HTTP" with cyan background
+	consoleLogger := gologger.NewLogger(os.Stdout, "bank-backend", gologger.WithTypeColor(gologger.LogType("HTTP"), gologger.BgCyan))
+	e.Use(echokitMw.RequestLogger(consoleLogger))
 
 	// Cors
 	log.Printf("Setting allowed origin to: %s", config.WebAppConfig.AllowOrigin)
@@ -65,7 +71,7 @@ func main() {
 
 	// Health check endpoint
 	api.GET("/ping", func(c echo.Context) error {
-		return c.JSON(200, echokitSchemas.Message{Status: "Sl-eco-bank backend is OK"})
+		return c.JSON(200, echokitSchemas.Message{Status: "Sl-eco/bank backend is OK"})
 	})
 
 	// Register routes
