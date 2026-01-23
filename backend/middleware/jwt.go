@@ -1,10 +1,15 @@
 package middleware
 
 import (
+	"context"
+	"crypto/ecdsa"
+	"crypto/rsa"
+	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/lestrrat-go/jwx/v3/jwk"
+	gologger "github.com/nrf24l01/go-logger"
 	echokitSchemas "github.com/nrf24l01/go-web-utils/echokit/schemas"
 	"github.com/silaeder-labs/bank/backend/handlers"
 
@@ -26,9 +31,65 @@ func JWTMiddleware(h *handlers.Handler) echo.MiddlewareFunc {
 			}
 			tokenString := authHeader[7:]
 
-			// Jwt parse
-			token, err := jwt.Parse(tokenString, h.Jwks.Keyfunc)
+			traceID := ""
+			if v := c.Get("traceId"); v != nil {
+				if s, ok := v.(string); ok {
+					traceID = s
+				}
+			}
+
+			// Jwt parse with keyfunc (resolve key from JWKS cache)
+			keyFunc := func(token *jwt.Token) (interface{}, error) {
+				kid, ok := token.Header["kid"].(string)
+				if !ok || kid == "" {
+					return nil, fmt.Errorf("missing kid header")
+				}
+
+				set, err := h.Jwks.Lookup(context.Background(), h.Config.KeyCloakConfig.URL)
+				if err != nil {
+					return nil, err
+				}
+
+				key, ok := set.LookupKeyID(kid)
+				if !ok {
+					return nil, fmt.Errorf("unable to find JWK for kid %s", kid)
+				}
+
+				pub, err := key.PublicKey()
+				if err != nil {
+					return nil, err
+				}
+
+				raw, err := jwk.PublicRawKeyOf(pub)
+				if err != nil {
+					return nil, err
+				}
+
+				switch k := raw.(type) {
+				case *rsa.PublicKey:
+					return k, nil
+				case rsa.PublicKey:
+					return &k, nil
+				case *rsa.PrivateKey:
+					return &k.PublicKey, nil
+				case rsa.PrivateKey:
+					return &k.PublicKey, nil
+				case *ecdsa.PublicKey:
+					return k, nil
+				case ecdsa.PublicKey:
+					return &k, nil
+				case *ecdsa.PrivateKey:
+					return &k.PublicKey, nil
+				case ecdsa.PrivateKey:
+					return &k.PublicKey, nil
+				default:
+					return nil, fmt.Errorf("unsupported public key type: %T", raw)
+				}
+			}
+
+			token, err := jwt.Parse(tokenString, keyFunc)
 			if err != nil {
+				h.Logger.Log(gologger.LevelError, gologger.LogType("AUTH"), fmt.Sprintf("Failed to parse token: %v", err), traceID)
 				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "invalid token", nil))
 			}
 
@@ -41,14 +102,6 @@ func JWTMiddleware(h *handlers.Handler) echo.MiddlewareFunc {
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok {
 				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "invalid token claims", nil))
-			}
-
-			// Verify standard claims
-			if !claims.VerifyExpiresAt(time.Now().UTC().Unix(), true) {
-				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "token expired", nil))
-			}
-			if !claims.VerifyIssuer(h.Config.KeyCloakConfig.ISSUER_URL, true) {
-				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "invalid token issuer", nil))
 			}
 
 			// Извлекаем user_id

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -50,8 +51,10 @@ func main() {
 		return
 	}
 
+	ctx := context.Background()
+
 	// Keycloak key verifier init
-	jwks, err := auth.RegisterJwks(config.KeyCloakConfig, logger)
+	jwks, err := auth.RegisterJwks(config.KeyCloakConfig, logger, &ctx)
 	if err != nil {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to register JWKS: %v", err), "")
 		return

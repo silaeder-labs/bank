@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/MicahParks/keyfunc"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	gologger "github.com/nrf24l01/go-logger"
 	"github.com/silaeder-labs/bank/backend/config"
 	"gorm.io/gorm"
@@ -10,6 +10,6 @@ import (
 type Handler struct {
 	DB     *gorm.DB
 	Config *config.Config
-	Jwks   *keyfunc.JWKS
+	Jwks   *jwk.Cache
 	Logger *gologger.Logger
 }

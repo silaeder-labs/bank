@@ -1,26 +1,25 @@
 package auth
 
 import (
+	"context"
 	"fmt"
-	"time"
 
-	"github.com/MicahParks/keyfunc"
+	"github.com/lestrrat-go/httprc/v3"
+	"github.com/lestrrat-go/jwx/v3/jwk"
 	gologger "github.com/nrf24l01/go-logger"
 	"github.com/silaeder-labs/bank/backend/config"
 )
 
-func RegisterJwks(cfg *config.KeyCloakConfig, logger *gologger.Logger) (*keyfunc.JWKS, error) {
-	jwks, err := keyfunc.Get(cfg.URL, keyfunc.Options{
-		RefreshErrorHandler: func(err error) {
-			logger.Log(gologger.LevelFatal, gologger.LogType("AUTH"), fmt.Sprintf("ERROR IN JWKS REFRESH: %s", err), "")
-		},
-		RefreshInterval:   time.Hour,
-		RefreshRateLimit:  time.Minute * 5,
-		RefreshTimeout:    time.Second * 10,
-		RefreshUnknownKID: true,
-	})
+func RegisterJwks(cfg *config.KeyCloakConfig, logger *gologger.Logger, ctx *context.Context) (*jwk.Cache, error) {
+	c, err := jwk.NewCache(*ctx, httprc.NewClient())
 	if err != nil {
+		logger.Log(gologger.LevelFatal, gologger.LogType("AUTH"), fmt.Sprintf("failed to create cache: %s", err), "")
 		return nil, err
 	}
-	return jwks, nil
+
+	if err := c.Register(*ctx, cfg.URL); err != nil {
+		logger.Log(gologger.LevelFatal, gologger.LogType("AUTH"), fmt.Sprintf("failed to register google JWKS: %s", err), "")
+		return nil, err
+	}
+	return c, nil
 }
