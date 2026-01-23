@@ -9,10 +9,10 @@ import (
 	"github.com/silaeder-labs/bank/backend/config"
 )
 
-func GetJwks(cfg *config.KeyCloakConfig, logger gologger.Logger) (*keyfunc.JWKS, error) {
+func RegisterJwks(cfg *config.KeyCloakConfig, logger *gologger.Logger) (*keyfunc.JWKS, error) {
 	jwks, err := keyfunc.Get(cfg.URL, keyfunc.Options{
 		RefreshErrorHandler: func(err error) {
-			logger.Log(gologger.LevelFatal, gologger.LogType("AUTH"), fmt.Sprintf("ERROR IN JWKS REFRESH: %s", err))
+			logger.Log(gologger.LevelFatal, gologger.LogType("AUTH"), fmt.Sprintf("ERROR IN JWKS REFRESH: %s", err), "")
 		},
 		RefreshInterval:   time.Hour,
 		RefreshRateLimit:  time.Minute * 5,

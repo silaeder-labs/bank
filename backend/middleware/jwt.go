@@ -34,7 +34,7 @@ func JWTMiddleware(h *handlers.Handler) echo.MiddlewareFunc {
 
 			// Check keys
 			if !token.Valid {
-				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "invalid token", nil))
+				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "SUS token", nil))
 			}
 
 			// Load claims
@@ -44,7 +44,7 @@ func JWTMiddleware(h *handlers.Handler) echo.MiddlewareFunc {
 			}
 
 			// Verify standard claims
-			if !claims.VerifyExpiresAt(time.Now().Unix(), true) {
+			if !claims.VerifyExpiresAt(time.Now().UTC().Unix(), true) {
 				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "token expired", nil))
 			}
 			if !claims.VerifyIssuer(h.Config.KeyCloakConfig.ISSUER_URL, true) {
@@ -54,7 +54,7 @@ func JWTMiddleware(h *handlers.Handler) echo.MiddlewareFunc {
 			// Извлекаем user_id
 			userID, ok := claims["sub"].(string)
 			if !ok {
-				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "Wrong claims", nil))
+				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "wrong claims", nil))
 			}
 
 			// Передаем user_id в контекст
