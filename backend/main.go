@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// Data sources initialization
-	db, err := pgKit.RegisterPostgres( config.PGConfig, false )
+	db, err := pgKit.RegisterPostgres(config.PGConfig, false)
 	if err != nil {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}
@@ -54,7 +54,11 @@ func main() {
 	e.Use(echokitMw.TraceMiddleware())
 	// create and pass colored console logger into middleware
 	// register custom LogType "HTTP" with cyan background
-	consoleLogger := gologger.NewLogger(os.Stdout, "bank-backend", gologger.WithTypeColor(gologger.LogType("HTTP"), gologger.BgCyan))
+	consoleLogger := gologger.NewLogger(os.Stdout, "bank-backend", gologger.WithTypeColors(map[gologger.LogType]string{
+		gologger.LogType("HTTP"): gologger.BgCyan,
+		gologger.LogType("AUTH"): gologger.BgGreen,
+	}),
+	)
 	e.Use(echokitMw.RequestLogger(consoleLogger))
 
 	// Cors
