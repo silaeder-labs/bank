@@ -25,16 +25,20 @@ import (
 
 func main() {
 	// Logger create
-	logger := gologger.NewLogger(os.Stdout, "bank", gologger.WithTypeColors(map[gologger.LogType]string{
-		gologger.LogType("HTTP"): gologger.BgCyan,
-		gologger.LogType("AUTH"): gologger.BgGreen,
-		gologger.LogType("SETUP"): gologger.BgRed,
-	}),
+	logger := gologger.NewLogger(os.Stdout, "bank", 
+		gologger.WithTypeColors(map[gologger.LogType]string{
+			gologger.LogType("HTTP"): gologger.BgCyan,
+			gologger.LogType("AUTH"): gologger.BgGreen,
+			gologger.LogType("SETUP"): gologger.BgRed,
+		}),
 	)
+	log.Printf("Logger initialized")
 
 	err := godotenv.Load(".env")
 	if err != nil {
 		logger.Log(gologger.LevelWarn, gologger.LogType("SETUP"), fmt.Sprintf("Failed to load .env file: %v", err), "")
+	} else {
+		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), ".env file loaded", "")
 	}
 
 	// Configuration initialization
@@ -42,6 +46,8 @@ func main() {
 	if err != nil {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to build config: %v", err), "")
 		return
+	} else {
+		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "Configuration loaded", "")
 	}
 
 	// Data sources initialization
@@ -49,6 +55,8 @@ func main() {
 	if err != nil {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to connect to postgres: %v", err), "")
 		return
+	} else {
+		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "Connected to Postgres database", "")
 	}
 
 	ctx := context.Background()
@@ -58,6 +66,8 @@ func main() {
 	if err != nil {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to register JWKS: %v", err), "")
 		return
+	} else {
+		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "JWKS registered", "")
 	}
 
 	// Create echo object
