@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	gologger "github.com/nrf24l01/go-logger"
 	echokitSchemas "github.com/nrf24l01/go-web-utils/echokit/schemas"
@@ -106,12 +107,17 @@ func JWTMiddleware(h *handlers.Handler) echo.MiddlewareFunc {
 
 			// Извлекаем user_id
 			userID, ok := claims["sub"].(string)
+			userUUID, err := uuid.Parse(userID)
+			if err != nil {
+				h.Logger.Log(gologger.LevelError, gologger.LogType("AUTH"), fmt.Sprintf("Invalid user ID in claims: %v", err), traceID)
+				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "invalid user ID in claims", nil))
+			}
 			if !ok {
 				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "wrong claims", nil))
 			}
 
 			// Передаем user_id в контекст
-			c.Set("userID", userID)
+			c.Set("userID", userUUID)
 
 			return next(c)
 		}

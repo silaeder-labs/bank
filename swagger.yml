@@ -38,7 +38,7 @@ paths:
               default:
                 value:
                   target_id: a1b2c3d4-0000-4000-8000-000000000001
-                  amount: 1500.25
+                  amount: 1500
                   comment: Подарок за помощь
       responses:
         '201':
@@ -185,7 +185,7 @@ paths:
                 value:
                   from_id: a1b2c3d4-0000-4000-8000-000000000002
                   to_id: a1b2c3d4-0000-4000-8000-000000000003
-                  amount: 250.00
+                  amount: 250
                   description: Оплата подписки за январь
       responses:
         '201':
@@ -412,10 +412,10 @@ components:
           format: uuid
           description: UUID получателя
         amount:
-          type: number
-          minimum: 0.01
-          description: Сумма перевода в валюте счета
-          example: 1200.5
+          type: integer
+          minimum: 1
+          description: Сумма перевода в целых единицах валюты
+          example: 1200
         comment:
           type: string
           maxLength: 100
@@ -432,36 +432,22 @@ components:
           format: date-time
           description: Время проведения транзакции в UTC
         amount:
-          type: number
-          description: Сумма перевода
+          type: integer
+          description: Сумма перевода (целое число)
         source:
-          type: object
-          required: [id]
-          properties:
-            id:
-              type: string
-              format: uuid
-            name:
-              type: string
+          type: string
+          format: uuid
+          description: UUID отправителя
         target:
-          type: object
-          required: [id]
-          properties:
-            id:
-              type: string
-              format: uuid
-            name:
-              type: string
+          type: string
+          format: uuid
+          description: UUID получателя
         comment:
           type: string
           description: Комментарий отправителя
         status:
           type: string
           enum: [PENDING, COMPLETED, FAILED]
-        metadata:
-          type: object
-          additionalProperties: true
-          description: Системные метаданные транзакции
     TransactionListResponse:
       type: object
       properties:
@@ -485,8 +471,8 @@ components:
           type: string
           format: uuid
         balance:
-          type: number
-          description: Текущий баланс пользователя (может быть отрицательным)
+          type: integer
+          description: Текущий баланс пользователя (целое число в единицах валюты)
         total_transactions:
           type: integer
           description: Количество завершенных транзакций
@@ -503,10 +489,10 @@ components:
           format: uuid
           description: UUID пользователя, которому будет зачислена сумма (payee)
         amount:
-          type: number
-          minimum: 0.01
-          description: Сумма запроса на оплату
-          example: 99.99
+          type: integer
+          minimum: 1
+          description: Сумма запроса на оплату в целых единицах валюты
+          example: 99
         description:
           type: string
           maxLength: 120
@@ -530,25 +516,15 @@ components:
           type: string
           format: date-time
         from:
-          type: object
-          required: [id]
-          properties:
-            id:
-              type: string
-              format: uuid
-            name:
-              type: string
+          type: string
+          format: uuid
+          description: UUID плательщика (payer)
         to:
-          type: object
-          required: [id]
-          properties:
-            id:
-              type: string
-              format: uuid
-            name:
-              type: string
+          type: string
+          format: uuid
+          description: UUID получателя (payee)
         amount:
-          type: number
+          type: integer
         status:
           type: string
           enum: [UNPAID, COMPLETED, CANCELLED]
@@ -556,6 +532,3 @@ components:
         description:
           type: string
           maxLength: 120
-        metadata:
-          type: object
-          additionalProperties: true

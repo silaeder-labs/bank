@@ -18,12 +18,14 @@ import (
 	echoMw "github.com/labstack/echo/v4/middleware"
 	echokitMw "github.com/nrf24l01/go-web-utils/echokit/middleware"
 	echokitSchemas "github.com/nrf24l01/go-web-utils/echokit/schemas"
-	pgKit "github.com/nrf24l01/go-web-utils/pg_kit"
+	"github.com/nrf24l01/go-web-utils/pgkit"
 
 	gologger "github.com/nrf24l01/go-logger"
 )
 
 func main() {
+	ctx := context.Background()
+
 	// Logger create
 	logger := gologger.NewLogger(os.Stdout, "bank", 
 		gologger.WithTypeColors(map[gologger.LogType]string{
@@ -51,15 +53,20 @@ func main() {
 	}
 
 	// Data sources initialization
-	db, err := pgKit.RegisterPostgres(config.PGConfig, false)
+	db, err := pgkit.NewDB(ctx, config.PGConfig)
 	if err != nil {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to connect to postgres: %v", err), "")
 		return
 	} else {
 		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "Connected to Postgres database", "")
 	}
-
-	ctx := context.Background()
+	err = pgkit.RunMigrations(db.SQL, config.PGConfig)
+	if err != nil {
+		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to run migrations: %v", err), "")
+		return
+	} else {
+		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "Migrations ran successfully", "")
+	}
 
 	// Keycloak key verifier init
 	jwks, err := auth.RegisterJwks(config.KeyCloakConfig, logger, &ctx)
