@@ -39,3 +39,22 @@ func (t *Transaction) ToTransactionFull() schemas.TransactionFull {
 		Comment: t.Description,
 	}
 }
+
+func GetTransactionsByUserID(db *pgkit.DB, ctx context.Context, userID uuid.UUID, limit, offset int) ([]Transaction, error) {
+	rows, err := db.Pool.Query(ctx, "SELECT line_id, inserted_at, from_user_id, to_user_id, amount_cents, description FROM transactions WHERE (from_user_id = $1 OR to_user_id = $1) AND (deleted_at IS NULL) ORDER BY inserted_at DESC LIMIT $2 OFFSET $3", userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var transactions []Transaction
+	for rows.Next() {
+		var t Transaction
+		if err := rows.Scan(&t.LineID, &t.InsertedAt, &t.From, &t.To, &t.AmountCents, &t.Description); err != nil {
+			return nil, err
+		}
+		transactions = append(transactions, t)
+	}
+
+	return transactions, nil
+}
