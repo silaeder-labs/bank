@@ -58,3 +58,12 @@ func GetTransactionsByUserID(db *pgkit.DB, ctx context.Context, userID uuid.UUID
 
 	return transactions, nil
 }
+
+func GetTransactionByID(db *pgkit.DB, ctx context.Context, transactionID uuid.UUID, userID uuid.UUID) (*Transaction, error) {
+	var t Transaction
+	if err := db.Pool.QueryRow(ctx, "SELECT line_id, inserted_at, from_user_id, to_user_id, amount_cents, description FROM transactions WHERE line_id = $1 AND deleted_at IS NULL AND (from_user_id = $2 OR to_user_id = $2)", transactionID, userID).
+		Scan(&t.LineID, &t.InsertedAt, &t.From, &t.To, &t.AmountCents, &t.Description); err != nil {
+		return nil, err
+	}
+	return &t, nil
+}

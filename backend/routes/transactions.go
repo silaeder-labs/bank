@@ -17,4 +17,5 @@ func RegisterTransactionRoutes(e *echo.Group, h *handlers.Handler) {
 	g.GET("", h.GetTransactionsHandler, echokitMw.QueryValidationMiddleware(func() interface{} {
 		return &schemas.GetTransactionsRequest{}
 	}))
+	g.GET("/:uuid", h.GetTransactionByIDHandler, echokitMw.PathUuidV4Middleware("uuid"))
 }
