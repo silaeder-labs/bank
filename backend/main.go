@@ -27,10 +27,10 @@ func main() {
 	ctx := context.Background()
 
 	// Logger create
-	logger := gologger.NewLogger(os.Stdout, "bank", 
+	logger := gologger.NewLogger(os.Stdout, "bank",
 		gologger.WithTypeColors(map[gologger.LogType]string{
-			gologger.LogType("HTTP"): gologger.BgCyan,
-			gologger.LogType("AUTH"): gologger.BgGreen,
+			gologger.LogType("HTTP"):  gologger.BgCyan,
+			gologger.LogType("AUTH"):  gologger.BgGreen,
 			gologger.LogType("SETUP"): gologger.BgRed,
 		}),
 	)
@@ -88,7 +88,7 @@ func main() {
 	e.Use(echoMw.Recover())
 	e.Use(echoMw.RemoveTrailingSlash())
 	e.Use(echokitMw.TraceMiddleware())
-	
+
 	e.Use(echokitMw.RequestLogger(logger))
 
 	// Cors

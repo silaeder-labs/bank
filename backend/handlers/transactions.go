@@ -42,7 +42,7 @@ func (h *Handler) GetTransactionsHandler(c echo.Context) error {
 		h.Logger.Log(gologger.LevelError, gologger.LogType("HTTP"), "Failed to get transactions: "+err.Error(), c.Get("traceId").(string))
 		return c.JSON(http.StatusInternalServerError, echokitSchemas.GenError(c, echokitSchemas.INTERNAL_SERVER_ERROR, "failed to get transactions", nil))
 	}
-	
+
 	var resp []schemas.TransactionFull
 	for _, t := range transactions {
 		resp = append(resp, t.ToTransactionFull())

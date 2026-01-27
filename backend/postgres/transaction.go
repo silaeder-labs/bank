@@ -10,10 +10,10 @@ import (
 )
 
 type Transaction struct {
-	LineID      uuid.UUID
-	InsertedAt  time.Time
-	UpdatedAt   time.Time
-	DeletedAt   time.Time
+	LineID     uuid.UUID
+	InsertedAt time.Time
+	UpdatedAt  time.Time
+	DeletedAt  time.Time
 
 	From        uuid.UUID
 	To          uuid.UUID
@@ -31,12 +31,12 @@ func (t *Transaction) Insert(db *pgkit.DB, ctx context.Context) error {
 
 func (t *Transaction) ToTransactionFull() schemas.TransactionFull {
 	return schemas.TransactionFull{
-		ID:      t.LineID.String(),
-		CreatedAt:  t.InsertedAt.Format(time.RFC3339),
-		Source:        t.From.String(),
-		Target:          t.To.String(),
-		Amount:      t.AmountCents,
-		Comment: t.Description,
+		ID:        t.LineID.String(),
+		CreatedAt: t.InsertedAt.Format(time.RFC3339),
+		Source:    t.From.String(),
+		Target:    t.To.String(),
+		Amount:    t.AmountCents,
+		Comment:   t.Description,
 	}
 }
 
