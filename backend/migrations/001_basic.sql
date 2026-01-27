@@ -7,8 +7,8 @@ CREATE TABLE transactions (
     inserted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ,
-    from_account UUID NOT NULL,
-    to_account UUID NOT NULL,
+    from_user_id UUID NOT NULL,
+    to_user_id UUID NOT NULL,
     amount_cents BIGINT NOT NULL,
     description VARCHAR(100)
 );

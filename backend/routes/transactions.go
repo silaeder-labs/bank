@@ -9,7 +9,8 @@ import (
 )
 
 func RegisterTransactionRoutes(e *echo.Group, h *handlers.Handler) {
-	e.POST("/transactions", h.CreateTransactionHandler, echokitMw.BodyValidationMiddleware(func() interface{} {
+	g := e.Group("/transactions")
+	g.POST("", h.CreateTransactionHandler, echokitMw.BodyValidationMiddleware(func() interface{} {
 		return &schemas.CreateTransactionRequest{}
 	}), middleware.JWTMiddleware(h))
 }

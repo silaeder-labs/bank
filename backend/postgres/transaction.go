@@ -22,8 +22,8 @@ type Transaction struct {
 }
 
 func (t *Transaction) Insert(db *pgkit.DB, ctx context.Context) error {
-	if err := db.Pool.QueryRow(ctx, "INSERT INTO transactions (from_user_id, to_user_id, amount_cents, description) VALUES ($1, $2, $3, $4) RETURNING line_id, inserted_at, updated_at, deleted_at",
-		t.From, t.To, t.AmountCents, t.Description).Scan(&t.LineID, &t.InsertedAt, &t.UpdatedAt, &t.DeletedAt); err != nil {
+	if err := db.Pool.QueryRow(ctx, "INSERT INTO transactions (from_user_id, to_user_id, amount_cents, description) VALUES ($1, $2, $3, $4) RETURNING line_id, inserted_at, updated_at",
+		t.From, t.To, t.AmountCents, t.Description).Scan(&t.LineID, &t.InsertedAt, &t.UpdatedAt); err != nil {
 		return err
 	}
 	return nil
