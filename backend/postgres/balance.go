@@ -11,11 +11,12 @@ import (
 )
 
 type Balance struct {
-	UserID      uuid.UUID
+	UserID     uuid.UUID
+	InsertedAt time.Time
+	UpdatedAt  time.Time
+	DeletedAt  time.Time
+
 	AmountCents int64
-	InsertedAt  time.Time
-	UpdatedAt   time.Time
-	DeletedAt   time.Time
 }
 
 func (b *Balance) ToBalanceFull() schemas.BalanceFull {

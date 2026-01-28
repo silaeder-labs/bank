@@ -16,33 +16,13 @@ func (h *Handler) CreateTransactionHandler(c echo.Context) error {
 	req := c.Get("validatedBody").(*schemas.CreateTransactionRequest)
 	from := c.Get("userID").(uuid.UUID)
 
-	canPay, err := postgres.CheckUserCanPay(h.DB, c.Request().Context(), from, req.Amount)
+	transaction, err := postgres.MakeTransaction(h.DB, c.Request().Context(), from, req.TargetID, req.Amount, req.Comment)
 	if err != nil {
-		h.Logger.Log(gologger.LevelError, gologger.LogType("DB"), "Failed to check user balance: "+err.Error(), c.Get("traceId").(string))
-		return c.JSON(http.StatusInternalServerError, echokitSchemas.GenError(c, echokitSchemas.INTERNAL_SERVER_ERROR, "failed to check user balance", nil))
-	}
-	if !canPay {
-		return c.JSON(http.StatusPaymentRequired, echokitSchemas.GenError(c, echokitSchemas.CustomErrorCode("PAYMENT_REQUIRED"), "insufficient funds", nil))
-	}
-
-	transaction := postgres.Transaction{
-		From:        from,
-		To:          req.TargetID,
-		AmountCents: req.Amount,
-		Description: req.Comment,
-	}
-
-	if err := transaction.Insert(h.DB, c.Request().Context()); err != nil {
+		if err == postgres.ErrCantPay {
+			return c.JSON(http.StatusPaymentRequired, echokitSchemas.GenError(c, echokitSchemas.CustomErrorCode("PAYMENT_REQUIRED"), "insufficient funds", nil))
+		}
 		h.Logger.Log(gologger.LevelError, gologger.LogType("DB"), "Failed to create transaction: "+err.Error(), c.Get("traceId").(string))
 		return c.JSON(http.StatusInternalServerError, echokitSchemas.GenError(c, echokitSchemas.INTERNAL_SERVER_ERROR, "failed to create transaction", nil))
-	}
-	if err := postgres.UpdateBalance(h.DB, c.Request().Context(), from, -req.Amount); err != nil {
-		h.Logger.Log(gologger.LevelError, gologger.LogType("DB"), "Failed to update sender balance: "+err.Error(), c.Get("traceId").(string))
-		return c.JSON(http.StatusInternalServerError, echokitSchemas.GenError(c, echokitSchemas.INTERNAL_SERVER_ERROR, "failed to update sender balance", nil))
-	}
-	if err := postgres.UpdateBalance(h.DB, c.Request().Context(), req.TargetID, req.Amount); err != nil {
-		h.Logger.Log(gologger.LevelError, gologger.LogType("DB"), "Failed to update receiver balance: "+err.Error(), c.Get("traceId").(string))
-		return c.JSON(http.StatusInternalServerError, echokitSchemas.GenError(c, echokitSchemas.INTERNAL_SERVER_ERROR, "failed to update receiver balance", nil))
 	}
 
 	return c.JSON(http.StatusCreated, transaction.ToTransactionFull())

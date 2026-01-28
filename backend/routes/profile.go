@@ -8,6 +8,6 @@ import (
 
 func RegisterProfileRoutes(e *echo.Group, h *handlers.Handler) {
 	g := e.Group("/profile")
-	g.Use(middleware.JWTMiddleware(h))
+	g.Use(middleware.JWTMiddleware(h, false))
 	g.GET("/me", h.GetBalanceHandler)
 }
