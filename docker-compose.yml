@@ -1,0 +1,60 @@
+networks:
+  bank-net:
+    driver: bridge
+    attachable: true
+
+volumes:
+  postgres-data:
+
+services:
+  backend:
+    image: ghcr.io/silaeder-labs/bank/backend:latest
+    restart: unless-stopped
+    build:
+      context: backend/
+      dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/ping"]
+      interval: 5s
+      retries: 30
+      timeout: 3s
+      start_period: 3s
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - APP_HOST=:8000
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=he1loT1ver
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_SSLMODE=disable
+      - POSTGRES_TIMEZONE=Europe/Moscow
+      - POSTGRES_MIGRATIONS_DIR=/app/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bank-net
+  
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: he1loT1ver
+      POSTGRES_DB: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - bank-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+    command: ["postgres", "-c", "listen_addresses=*"]
+    restart: unless-stopped
