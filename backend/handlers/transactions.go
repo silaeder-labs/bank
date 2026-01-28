@@ -22,7 +22,7 @@ func (h *Handler) CreateTransactionHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echokitSchemas.GenError(c, echokitSchemas.INTERNAL_SERVER_ERROR, "failed to check user balance", nil))
 	}
 	if !canPay {
-		return c.JSON(http.StatusPaymentRequired, echokitSchemas.GenError(c, echokitSchemas.BAD_REQUEST, "insufficient funds", nil))
+		return c.JSON(http.StatusPaymentRequired, echokitSchemas.GenError(c, echokitSchemas.CustomErrorCode("PAYMENT_REQUIRED"), "insufficient funds", nil))
 	}
 
 	transaction := postgres.Transaction{

@@ -63,8 +63,8 @@ github.com/ncruces/go-strftime v0.1.9 h1:bY0MQC28UADQmHmaF5dgpLmImcShSi2kHU9XLdh
 github.com/ncruces/go-strftime v0.1.9/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
 github.com/nrf24l01/go-logger v1.1.1 h1:Ha60OC0JSSh7DFeOpva8BsRfF2pTWuqbSj8XPAssawA=
 github.com/nrf24l01/go-logger v1.1.1/go.mod h1:3Kuq9SO9WdYFzGAynwORnAyxnIVQuHgw93r4k9f61wA=
-github.com/nrf24l01/go-web-utils v1.12.2 h1:/7VQEO8U1rkgCYCpZyIBsaH4zIaLuHdt6uG19Ah8NJ4=
-github.com/nrf24l01/go-web-utils v1.12.2/go.mod h1:VUQZWEdcFBSne9BE/jmspD/HzMysZLawJ0elXqf0YjU=
+github.com/nrf24l01/go-web-utils v1.12.3 h1:BCHT8buE4FtEku7TBbHCLtE1TCjaqJLYKE/x2THoLYQ=
+github.com/nrf24l01/go-web-utils v1.12.3/go.mod h1:VUQZWEdcFBSne9BE/jmspD/HzMysZLawJ0elXqf0YjU=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pressly/goose/v3 v3.26.0 h1:KJakav68jdH0WDvoAcj8+n61WqOIaPGgH0bJWS6jpmM=
