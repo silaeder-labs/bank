@@ -65,7 +65,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
-        '409':
+        '402':
           description: Недостаточно средств для совершения перевода
           content:
             application/json:
@@ -293,7 +293,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentFull'
-        '409':
+        '402':
           description: Недостаточно средств
           content:
             application/json:
@@ -473,9 +473,6 @@ components:
         balance:
           type: integer
           description: Текущий баланс пользователя (целое число в единицах валюты)
-        total_transactions:
-          type: integer
-          description: Количество завершенных транзакций
     PaymentCreateRequest:
       type: object
       required: [from_id, to_id, amount]

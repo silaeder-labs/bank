@@ -30,7 +30,7 @@ func main() {
 	logger := gologger.NewLogger(os.Stdout, "bank",
 		gologger.WithTypeColors(map[gologger.LogType]string{
 			gologger.LogType("HTTP"):  gologger.BgCyan,
-			gologger.LogType("AUTH"):  gologger.BgGreen,
+			gologger.LogType("DB"):  gologger.BgGreen,
 			gologger.LogType("SETUP"): gologger.BgRed,
 		}),
 	)
