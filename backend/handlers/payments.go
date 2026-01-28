@@ -19,7 +19,7 @@ func (h *Handler) CreatePaymentHandler(c echo.Context) error {
 		To:          req.ToID,
 		Amount:      req.Amount,
 		Description: req.Description,
-		Status: 	string(schemas.StatusPending),
+		Status:      string(schemas.StatusPending),
 	}
 
 	if err := payment.Insert(h.DB, c.Request().Context()); err != nil {
@@ -33,7 +33,7 @@ func (h *Handler) CreatePaymentHandler(c echo.Context) error {
 func (h *Handler) GetPaymentHandler(c echo.Context) error {
 	paymentIdStr := c.Param("uuid")
 	userID := c.Get("userID").(uuid.UUID)
-	
+
 	paymentUUID, err := uuid.Parse(paymentIdStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echokitSchemas.GenError(c, echokitSchemas.BAD_REQUEST, "invalid payment ID", nil))
