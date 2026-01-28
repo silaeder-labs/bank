@@ -42,3 +42,16 @@ func (p *Payment) Insert(db *pgkit.DB, ctx context.Context) error {
 	`, p.From, p.To, p.Amount, p.Description, p.Status).Scan(&p.ID, &p.InsertedAt, &p.UpdatedAt)
 	return err
 }
+
+func GetPaymentByID(db *pgkit.DB, ctx context.Context, paymentID uuid.UUID, userID uuid.UUID) (*Payment, error) {
+	var payment Payment
+	err := db.Pool.QueryRow(ctx, `
+		SELECT id, from_id, to_id, amount, description, status, inserted_at, updated_at
+		FROM payments
+		WHERE id = $1 AND deleted_at IS NULL AND (from_id = $2 OR to_id = $2)
+	`, paymentID, userID).Scan(&payment.ID, &payment.From, &payment.To, &payment.Amount, &payment.Description, &payment.Status, &payment.InsertedAt, &payment.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &payment, nil
+}

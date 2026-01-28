@@ -13,4 +13,5 @@ func RegisterPaymentsRoutes(e *echo.Group, h *handlers.Handler) {
 	g.POST("", h.CreatePaymentHandler, middleware.JWTMiddleware(h, true), echokitMw.BodyValidationMiddleware(func() interface{} {
 		return &schemas.CreatePaymentRequest{}
 	}))
+	g.GET("/:uuid", h.GetPaymentHandler, middleware.JWTMiddleware(h, true), echokitMw.PathUuidV4Middleware("uuid"))
 }

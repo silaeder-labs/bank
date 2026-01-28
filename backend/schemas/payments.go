@@ -18,7 +18,7 @@ const (
 )
 
 type PaymentFull struct {
-	ID          string `json:"payment_id"`
+	ID          string `json:"id"`
 	CreateAt    string `json:"created_at"`
 	From        string `json:"from" validate:"required,uuid4"`
 	To          string `json:"to" validate:"required,uuid4"`
