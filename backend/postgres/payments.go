@@ -17,8 +17,9 @@ type Payment struct {
 
 	From        uuid.UUID
 	To          uuid.UUID
+	Creator     uuid.UUID
 	Amount      int64
-	Status      string
+	Status      schemas.PaymentStatus
 	Description string
 }
 
@@ -29,7 +30,7 @@ func (p *Payment) ToPaymentFull() schemas.PaymentFull {
 		From:        p.From.String(),
 		To:          p.To.String(),
 		Amount:      p.Amount,
-		Status:      schemas.Status(p.Status),
+		Status:      p.Status,
 		Description: p.Description,
 	}
 }
@@ -46,12 +47,17 @@ func (p *Payment) Insert(db *pgkit.DB, ctx context.Context) error {
 func GetPaymentByID(db *pgkit.DB, ctx context.Context, paymentID uuid.UUID, userID uuid.UUID) (*Payment, error) {
 	var payment Payment
 	err := db.Pool.QueryRow(ctx, `
-		SELECT id, from_id, to_id, amount, description, status, inserted_at, updated_at
+		SELECT id, from_id, to_id, amount, description, status, creator_id, inserted_at, updated_at
 		FROM payments
 		WHERE id = $1 AND deleted_at IS NULL AND (from_id = $2 OR to_id = $2)
-	`, paymentID, userID).Scan(&payment.ID, &payment.From, &payment.To, &payment.Amount, &payment.Description, &payment.Status, &payment.InsertedAt, &payment.UpdatedAt)
+	`, paymentID, userID).Scan(&payment.ID, &payment.From, &payment.To, &payment.Amount, &payment.Description, &payment.Status, &payment.Creator, &payment.InsertedAt, &payment.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return &payment, nil
+}
+
+func (p *Payment) ChangeStatus(db *pgkit.DB, ctx context.Context, newStatus schemas.PaymentStatus) error {
+	err := db.Pool.QueryRow(ctx, "UPDATE payments SET status=$1 WHERE id=$2 RETURNING updated_at, status", newStatus, p.ID).Scan(&p.UpdatedAt, &p.Status)
+	return err
 }

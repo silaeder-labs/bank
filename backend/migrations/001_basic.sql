@@ -26,6 +26,7 @@ CREATE TABLE payments (
     inserted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at TIMESTAMPTZ,
+    creator_id UUID NOT NULL,
     from_id UUID NOT NULL,
     to_id UUID NOT NULL,
     amount BIGINT NOT NULL,

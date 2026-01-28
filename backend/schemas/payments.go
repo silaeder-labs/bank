@@ -9,20 +9,20 @@ type CreatePaymentRequest struct {
 	Description string    `json:"description,omitempty" validate:"max=120"`
 }
 
-type Status string
+type PaymentStatus string
 
 const (
-	StatusPending   Status = "UNPAID"
-	StatusCompleted Status = "COMPLETED"
-	StatusCancelled Status = "CANCELLED"
+	StatusPending   PaymentStatus = "UNPAID"
+	StatusCompleted PaymentStatus = "COMPLETED"
+	StatusCancelled PaymentStatus = "CANCELLED"
 )
 
 type PaymentFull struct {
-	ID          string `json:"id"`
-	CreateAt    string `json:"created_at"`
-	From        string `json:"from" validate:"required,uuid4"`
-	To          string `json:"to" validate:"required,uuid4"`
-	Amount      int64  `json:"amount"`
-	Status      Status `json:"status"`
-	Description string `json:"description,omitempty"`
+	ID          string        `json:"id"`
+	CreateAt    string        `json:"created_at"`
+	From        string        `json:"from" validate:"required,uuid4"`
+	To          string        `json:"to" validate:"required,uuid4"`
+	Amount      int64         `json:"amount"`
+	Status      PaymentStatus `json:"status"`
+	Description string        `json:"description,omitempty"`
 }

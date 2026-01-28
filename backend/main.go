@@ -96,7 +96,7 @@ func main() {
 	log.Printf("Setting allowed origin to: %s", config.WebAppConfig.AllowOrigin)
 	e.Use(echoMw.CORSWithConfig(echoMw.CORSConfig{
 		AllowOrigins:     []string{config.WebAppConfig.AllowOrigin},
-		AllowMethods:     []string{echo.GET, echo.POST, echo.OPTIONS, echo.DELETE, echo.PATCH},
+		AllowMethods:     []string{echo.GET, echo.POST, echo.OPTIONS, echo.DELETE},
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		AllowCredentials: true,
 	}))
