@@ -15,4 +15,5 @@ func RegisterPaymentsRoutes(e *echo.Group, h *handlers.Handler) {
 	}))
 	g.GET("/:uuid", h.GetPaymentHandler, middleware.JWTMiddleware(h, false), echokitMw.PathUuidV4Middleware("uuid"))
 	g.DELETE("/:uuid", h.RemovePaymentHandler, middleware.JWTMiddleware(h, false), echokitMw.PathUuidV4Middleware("uuid"))
+	g.POST("/:uuid/pay", h.PayPaymentHandler, middleware.JWTMiddleware(h, false), echokitMw.PathUuidV4Middleware("uuid"))
 }

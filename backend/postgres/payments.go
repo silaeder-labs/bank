@@ -37,10 +37,10 @@ func (p *Payment) ToPaymentFull() schemas.PaymentFull {
 
 func (p *Payment) Insert(db *pgkit.DB, ctx context.Context) error {
 	err := db.Pool.QueryRow(ctx, `
-		INSERT INTO payments (from_id, to_id, amount, description, status)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO payments (from_id, to_id, amount, description, status, creator_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, inserted_at, updated_at
-	`, p.From, p.To, p.Amount, p.Description, p.Status).Scan(&p.ID, &p.InsertedAt, &p.UpdatedAt)
+	`, p.From, p.To, p.Amount, p.Description, p.Status, p.Creator).Scan(&p.ID, &p.InsertedAt, &p.UpdatedAt)
 	return err
 }
 
@@ -49,7 +49,7 @@ func GetPaymentByID(db *pgkit.DB, ctx context.Context, paymentID uuid.UUID, user
 	err := db.Pool.QueryRow(ctx, `
 		SELECT id, from_id, to_id, amount, description, status, creator_id, inserted_at, updated_at
 		FROM payments
-		WHERE id = $1 AND deleted_at IS NULL AND (from_id = $2 OR to_id = $2)
+		WHERE id = $1 AND deleted_at IS NULL AND (from_id = $2 OR to_id = $2 OR creator_id = $2) AND status='UNPAID'
 	`, paymentID, userID).Scan(&payment.ID, &payment.From, &payment.To, &payment.Amount, &payment.Description, &payment.Status, &payment.Creator, &payment.InsertedAt, &payment.UpdatedAt)
 	if err != nil {
 		return nil, err
