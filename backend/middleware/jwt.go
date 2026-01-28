@@ -6,6 +6,8 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -17,7 +19,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func JWTMiddleware(h *handlers.Handler) echo.MiddlewareFunc {
+func JWTMiddleware(h *handlers.Handler, payment_create_required bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// Get header
@@ -114,6 +116,34 @@ func JWTMiddleware(h *handlers.Handler) echo.MiddlewareFunc {
 			}
 			if !ok {
 				return c.JSON(http.StatusUnauthorized, echokitSchemas.GenError(c, echokitSchemas.UNAUTHORIZED, "wrong claims", nil))
+			}
+
+			// Load scopes
+			if payment_create_required {
+				scopesInterface, ok := claims["scope"]
+				if !ok {
+					return c.JSON(http.StatusForbidden, echokitSchemas.GenError(c, echokitSchemas.FORBIDDEN, "missing scopes in token", nil))
+				}
+
+				var scopes []string
+				switch v := scopesInterface.(type) {
+				case string:
+					scopes = append(scopes, strings.Split(v, " ")...)
+				case []interface{}:
+					for _, s := range v {
+						if str, ok := s.(string); ok {
+							scopes = append(scopes, str)
+						}
+					}
+				default:
+					return c.JSON(http.StatusForbidden, echokitSchemas.GenError(c, echokitSchemas.FORBIDDEN, "invalid scopes format in token", nil))
+				}
+
+				hasAdminScope := slices.Contains(scopes, "payment_create")
+
+				if !hasAdminScope {
+					return c.JSON(http.StatusForbidden, echokitSchemas.GenError(c, echokitSchemas.FORBIDDEN, "admin scope required", nil))
+				}
 			}
 
 			// Передаем user_id в контекст
