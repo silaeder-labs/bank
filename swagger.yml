@@ -1,0 +1,531 @@
+openapi: 3.0.3
+info:
+  title: Bank Transactions API
+  description: |
+    API для управления транзакциями и просмотра информации о балансе.
+    Все запросы требуют JWT в заголовке Authorization: Bearer <token>.
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:2334
+
+# Добавляем логические группы (теги) для удобства навигации
+tags:
+  - name: Transactions
+    description: Операции с транзакциями пользователя (создание переводов, список, подробности)
+  - name: Profile
+    description: Информация о профиле и балансе текущего пользователя
+  - name: Payments
+    description: "Сервисные платежи (запросы оплаты пользователю): создание, просмотр, оплата, отмена"
+
+security:
+  - bearerAuth: []
+
+paths:
+  /transactions:
+    post:
+      tags:
+        - Transactions
+      summary: Создать перевод
+      description: Создает исходящий перевод с текущего пользователя на другого.
+      operationId: createTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+            examples:
+              default:
+                value:
+                  target_id: a1b2c3d4-0000-4000-8000-000000000001
+                  amount: 1500
+                  comment: Подарок за помощь
+      responses:
+        '201':
+          description: Транзакция успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionFull'
+        '400':
+          description: Ошибка валидации входных данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          description: JWT отсутствует или недействителен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Получатель не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '402':
+          description: Недостаточно средств для совершения перевода
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+        - Transactions
+      summary: Получить список своих транзакций
+      description: Возвращает список транзакций текущего пользователя с пагинацией.
+      operationId: listTransactions
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы, начиная с 1
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: size
+          in: query
+          description: Размер страницы (макс. 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Страница транзакций пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionListResponse'
+        '401':
+          description: JWT отсутствует или недействителен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /transactions/{transactionId}:
+    parameters:
+      - name: transactionId
+        in: path
+        required: true
+        description: UUID транзакции
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Transactions
+      summary: Получить детали транзакции
+      operationId: getTransactionById
+      responses:
+        '200':
+          description: Детали транзакции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionFull'
+        '401':
+          description: JWT отсутствует или недействителен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Транзакция не найдена или не принадлежит пользователю
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /profile/me:
+    get:
+      tags:
+        - Profile
+      summary: Получить информацию о текущем пользователе
+      operationId: getProfile
+      responses:
+        '200':
+          description: Профиль пользователя с балансом
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileSummary'
+        '401':
+          description: JWT отсутствует или недействителен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  # Новые эндпоинты для платежей
+  /payments:
+    post:
+      tags:
+        - Payments
+      summary: Создать платёж (service -> запрос оплаты у пользователя)
+      description: >
+        Сервис создаёт запрос платежа: указывается пользователь-отправитель (payer),
+        пользователь-получатель (payee), сумма (> 0) и описание (0..120 символов).
+        Доступно только через сервисный токен с scope payment_create.
+      operationId: createPayment
+      security:
+        - oauth2Service: [payment_create]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreateRequest'
+            examples:
+              default:
+                value:
+                  from_id: a1b2c3d4-0000-4000-8000-000000000002
+                  to_id: a1b2c3d4-0000-4000-8000-000000000003
+                  amount: 250
+                  description: Оплата подписки за январь
+      responses:
+        '201':
+          description: Платёж успешно создан, возвращает UUID платежа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentCreateResponse'
+        '400':
+          description: Ошибка валидации входных данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          description: JWT/токен отсутствует или недействителен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /payments/{paymentId}:
+    parameters:
+      - name: paymentId
+        in: path
+        required: true
+        description: UUID платежа
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - Payments
+      summary: Получить данные платежа
+      operationId: getPaymentById
+      description: Возвращает информацию о платеже (кому, от кого, сумма, статус, описание).
+      security:
+        - bearerAuth: []
+        - oauth2Service: []
+      responses:
+        '200':
+          description: Данные платежа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentFull'
+        '401':
+          description: JWT/токен отсутствует или недействителен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Платёж не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags:
+        - Payments
+      summary: Удалить (отменить) платёж
+      description: Платёж удаляется/отменяется. Операция доступна сервису (oauth2Service с scope payment_create) или пользователю (JWT).
+      operationId: deletePayment
+      security:
+        - bearerAuth: []
+        - oauth2Service: [payment_create]
+      responses:
+        '200':
+          description: Платёж успешно отменён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentFull'
+        '401':
+          description: JWT/токен отсутствует или недействителен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Платёж не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Нельзя отменить уже выполненный платёж
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /payments/{paymentId}/pay:
+    post:
+      tags:
+        - Payments
+      summary: Оплатить платёж (эквивалент /payments/{id} POST, явный эндпоинт)
+      operationId: payPaymentExplicit
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Успешная оплата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentFull'
+        '402':
+          description: Недостаточно средств
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Платёж не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    oauth2Service:
+      type: oauth2
+      description: Сервисные токены (client_credentials). Используются для создания запросов платежей.
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.com/oauth/token
+          scopes:
+            payment_create: Создание запросов на оплату (payments create)
+
+  schemas:
+    ErrorCode:
+      type: string
+      description: Код ошибки (машиночитаемый). Используется для обработки ошибок на клиенте.
+      enum:
+        - BAD_REQUEST
+        - VALIDATION_FAILED
+        - UNAUTHORIZED
+        - FORBIDDEN
+        - INTERNAL_SERVER_ERROR
+        - USER_NOT_FOUND
+        - TRANSACTION_NOT_FOUND
+        - INSUFFICIENT_FUNDS
+        - INVALID_JWT
+        - PAYMENT_NOT_FOUND
+    ApiError:
+      type: object
+      required: [code, message, traceId, timestamp, path]
+      description: Стандартный формат ошибки API. Все ошибки кроме 2xx возвращаются в этом виде.
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
+          description: Человекочитаемое сообщение (для отображения пользователю)
+          example: Неверный запрос
+        traceId:
+          type: string
+          format: uuid
+          description: |
+            Уникальный идентификатор запроса для трейсинга.
+            Позволяет сопоставить ошибку с логами.
+          example: "[UUID73]"
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки (ISO 8601, UTC)
+        path:
+          type: string
+          description: Путь запроса, на котором произошла ошибка
+          example: /api/v1/transactions
+        details:
+          type: object
+          additionalProperties: true
+          description: Дополнительные детали ошибки
+    FieldError:
+      type: object
+      required: [field, issue]
+      properties:
+        field:
+          type: string
+          description: Имя поля с ошибкой (может быть вложенным, например "location.latitude")
+          example: amount
+        issue:
+          type: string
+          description: Описание проблемы
+          example: must be >= 0.01
+        rejectedValue:
+          description: Значение, которое не прошло валидацию
+          nullable: true
+    ValidationError:
+      type: object
+      required: [code, message, traceId, timestamp, path, fieldErrors]
+      description: Структура ошибки валидации, содержит ошибки по полям.
+      properties:
+        code:
+          type: string
+          example: VALIDATION_FAILED
+        message:
+          type: string
+        traceId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+    CreateTransactionRequest:
+      type: object
+      required: [target_id, amount]
+      properties:
+        target_id:
+          type: string
+          format: uuid
+          description: UUID получателя
+        amount:
+          type: integer
+          minimum: 1
+          description: Сумма перевода в целых единицах валюты
+          example: 1200
+        comment:
+          type: string
+          maxLength: 100
+          description: Комментарий к транзакции
+    TransactionFull:
+      type: object
+      required: [id, createdAt, amount, source, target, comment, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+          description: Время проведения транзакции в UTC
+        amount:
+          type: integer
+          description: Сумма перевода (целое число)
+        source:
+          type: string
+          format: uuid
+          description: UUID отправителя
+        target:
+          type: string
+          format: uuid
+          description: UUID получателя
+        comment:
+          type: string
+          description: Комментарий отправителя
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, FAILED]
+    TransactionListResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionFull'
+        total:
+          type: integer
+          description: Общее количество транзакций (доступных)
+        page:
+          type: integer
+          description: Текущая запрошенная страница
+        size:
+          type: integer
+          description: Размер страницы
+    ProfileSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        balance:
+          type: integer
+          description: Текущий баланс пользователя (целое число в единицах валюты)
+    PaymentCreateRequest:
+      type: object
+      required: [from_id, to_id, amount]
+      properties:
+        from_id:
+          type: string
+          format: uuid
+          description: UUID пользователя, от которого будет списана сумма (payer)
+        to_id:
+          type: string
+          format: uuid
+          description: UUID пользователя, которому будет зачислена сумма (payee)
+        amount:
+          type: integer
+          minimum: 1
+          description: Сумма запроса на оплату в целых единицах валюты
+          example: 99
+        description:
+          type: string
+          maxLength: 120
+          description: Описание операции (0..120 символов)
+    PaymentCreateResponse:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID созданного платежа
+    PaymentFull:
+      type: object
+      required: [id, createdAt, from, to, amount, status, description]
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        from:
+          type: string
+          format: uuid
+          description: UUID плательщика (payer)
+        to:
+          type: string
+          format: uuid
+          description: UUID получателя (payee)
+        amount:
+          type: integer
+        status:
+          type: string
+          enum: [UNPAID, COMPLETED, CANCELLED]
+          description: "Статус платежа: не выполнена (UNPAID), выполнена (COMPLETED), отменена (CANCELLED)"
+        description:
+          type: string
+          maxLength: 120
