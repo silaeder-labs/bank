@@ -16,6 +16,7 @@ WORKDIR /app
 RUN apk add --no-cache tzdata curl
 
 COPY --from=builder /app/main .
+COPY ./migrations /app/migrations
 RUN chmod +x ./main
 
 CMD ["./main"]
