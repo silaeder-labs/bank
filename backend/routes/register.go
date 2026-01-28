@@ -8,4 +8,5 @@ import (
 func RegisterRoutes(e *echo.Group, h *handlers.Handler) {
 	RegisterTransactionRoutes(e, h)
 	RegisterProfileRoutes(e, h)
+	RegisterPaymentsRoutes(e, h)
 }

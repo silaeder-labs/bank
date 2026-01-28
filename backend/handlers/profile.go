@@ -13,7 +13,7 @@ import (
 
 func (h *Handler) GetBalanceHandler(c echo.Context) error {
 	uid := c.Get("userID").(uuid.UUID)
-	
+
 	balance, err := postgres.GetBalanceByUserID(h.DB, c.Request().Context(), uid)
 	if err != nil {
 		if err == pgx.ErrNoRows {
