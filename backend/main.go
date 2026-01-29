@@ -2,17 +2,20 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 
 	"github.com/silaeder-labs/bank/backend/auth"
 	"github.com/silaeder-labs/bank/backend/config"
 	"github.com/silaeder-labs/bank/backend/handlers"
+	"github.com/silaeder-labs/bank/backend/postgres"
 	"github.com/silaeder-labs/bank/backend/routes"
 
 	echoMw "github.com/labstack/echo/v4/middleware"
@@ -24,6 +27,10 @@ import (
 )
 
 func main() {
+	grantUnlimitedFlag := flag.String("grant-unlimited", "", "user UUID to grant unlimited balance")
+	revokeUnlimitedFlag := flag.String("revoke-unlimited", "", "user UUID to revoke unlimited balance")
+	flag.Parse()
+
 	ctx := context.Background()
 
 	// Logger create
@@ -33,6 +40,7 @@ func main() {
 			gologger.LogType("DB"):    gologger.BgGreen,
 			gologger.LogType("SETUP"): gologger.BgRed,
 			gologger.LogType("AUTH"):  gologger.BgMagenta,
+			gologger.LogType("CLI"): gologger.BgCyan,
 		}),
 	)
 	log.Printf("Logger initialized")
@@ -41,7 +49,7 @@ func main() {
 	if err != nil {
 		logger.Log(gologger.LevelWarn, gologger.LogType("SETUP"), fmt.Sprintf("Failed to load .env file: %v", err), "")
 	} else {
-		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), ".env file loaded", "")
+		logger.Log(gologger.LevelSuccess, gologger.LogType("SETUP"), ".env file loaded", "")
 	}
 
 	// Configuration initialization
@@ -50,7 +58,7 @@ func main() {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to build config: %v", err), "")
 		return
 	} else {
-		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "Configuration loaded", "")
+		logger.Log(gologger.LevelSuccess, gologger.LogType("SETUP"), "Configuration loaded", "")
 	}
 
 	// Data sources initialization
@@ -59,14 +67,14 @@ func main() {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to connect to postgres: %v", err), "")
 		return
 	} else {
-		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "Connected to Postgres database", "")
+		logger.Log(gologger.LevelSuccess, gologger.LogType("SETUP"), "Connected to Postgres database", "")
 	}
 	err = pgkit.RunMigrations(db.SQL, config.PGConfig)
 	if err != nil {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to run migrations: %v", err), "")
 		return
 	} else {
-		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "Migrations ran successfully", "")
+		logger.Log(gologger.LevelSuccess, gologger.LogType("SETUP"), "Migrations ran successfully", "")
 	}
 
 	// Keycloak key verifier init
@@ -75,7 +83,35 @@ func main() {
 		logger.Log(gologger.LevelFatal, gologger.LogType("SETUP"), fmt.Sprintf("Failed to register JWKS: %v", err), "")
 		return
 	} else {
-		logger.Log(gologger.LevelInfo, gologger.LogType("SETUP"), "JWKS registered", "")
+		logger.Log(gologger.LevelSuccess, gologger.LogType("SETUP"), "JWKS registered", "")
+	}
+
+	// Unlimited balance CLI commands
+	if *grantUnlimitedFlag != "" {
+		targetID, err := uuid.Parse(*grantUnlimitedFlag)
+		if err != nil {
+			logger.Log(gologger.LevelFatal, gologger.LogType("CLI"), fmt.Sprintf("invalid grant-unlimited uuid: %v", err), "")
+			return
+		}
+		if err := postgres.GrantUnlimitedBalance(db, ctx, targetID); err != nil {
+			logger.Log(gologger.LevelFatal, gologger.LogType("DB"), fmt.Sprintf("failed to grant unlimited balance: %v", err), "")
+			return
+		}
+		logger.Log(gologger.LevelSuccess, gologger.LogType("CLI"), fmt.Sprintf("unlimited balance granted to %s", targetID.String()), "")
+		return
+	}
+	if *revokeUnlimitedFlag != "" {
+		targetID, err := uuid.Parse(*revokeUnlimitedFlag)
+		if err != nil {
+			logger.Log(gologger.LevelFatal, gologger.LogType("CLI"), fmt.Sprintf("invalid revoke-unlimited uuid: %v", err), "")
+			return
+		}
+		if err := postgres.RevokeUnlimitedBalance(db, ctx, targetID); err != nil {
+			logger.Log(gologger.LevelFatal, gologger.LogType("DB"), fmt.Sprintf("failed to revoke unlimited balance: %v", err), "")
+			return
+		}
+		logger.Log(gologger.LevelSuccess, gologger.LogType("CLI"), fmt.Sprintf("unlimited balance revoked for %s", targetID.String()), "")
+		return
 	}
 
 	// Create echo object

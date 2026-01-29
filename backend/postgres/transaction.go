@@ -86,9 +86,16 @@ func MakeTransaction(db *pgkit.DB, ctx context.Context, from uuid.UUID, to uuid.
 		return nil, err
 	}
 
-	fromBalance := balances[from]
-	if fromBalance < amount {
-		return nil, ErrCantPay
+	isUnlimited, err := hasUnlimitedBalanceTx(tx, ctx, from)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isUnlimited {
+		fromBalance := balances[from]
+		if fromBalance < amount {
+			return nil, ErrCantPay
+		}
 	}
 
 	transaction := Transaction{
