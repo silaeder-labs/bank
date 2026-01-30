@@ -1,4 +1,12 @@
-# Bank
+<h1 align="center" style="border-bottom: none">
+<br>Bank
+</h1>
+<p align="center">
+<a href="https://github.com/silaeder-labs/bank/actions/workflows/backend.yml"><img src="https://github.com/silaeder-labs/bank/actions/workflows/backend.yml/badge.svg" alt="Backend build"/></a>
+</p>
+
+## Что это?
+Сервис для контроля балансов пользователей
 
 ## JWT требования
 - Пользователь
