@@ -10,7 +10,7 @@
 
 ## JWT требования
 - Пользователь
-Нужен просто sub, и чтоб верефицировался через jwk
+Нужен просто sub, и чтоб через jwk подпись проверялась
 - Сервис
 Нужно в scope пунктик `payment_create`, пример `profile payment_create email`
 
@@ -48,6 +48,7 @@ curl -f <ip>:<port>/ping
 ```
 
 ## Запуск для разработки
+*Нужен postgresql*
 - Скачать **air**
 ```bash
 go install github.com/air-verse/air@latest
@@ -71,7 +72,7 @@ air
 cp .env.example .env
 ```
 - Настроить параметры приложения в **.env**
-- Запустить докер компоуз
+- Запустить docker compose
 ```bash
 docker compose up -d
 ```
